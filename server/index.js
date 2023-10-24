@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
+import userRouter from './routes/user.route.js';
 
 dotenv.config();
 
@@ -11,9 +12,7 @@ mongoose
   .then(() => console.log('Connected to the database'))
   .catch((error) => console.log(error));
 
-app.get('/', (req, res) => {
-  res.send('Hello world');
-});
+app.use('/api/user', userRouter);
 
 app.listen(5000, () => {
   console.log(`Server is running on http://localhost:5000`);
