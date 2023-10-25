@@ -1,5 +1,5 @@
 import bcryptjs from 'bcryptjs';
-import status from 'http-status';
+import { StatusCodes } from 'http-status-codes';
 import User from '../models/user.model.js';
 
 export const signup = async (req, res) => {
@@ -10,9 +10,11 @@ export const signup = async (req, res) => {
     await newUser.save();
 
     res
-      .status(status.CREATED)
+      .status(StatusCodes.CREATED)
       .json({ status: 'success', message: 'User created successfully' });
   } catch (error) {
-    res.status(status.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
 };
