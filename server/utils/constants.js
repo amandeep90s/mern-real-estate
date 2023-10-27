@@ -1,8 +1,10 @@
 const constants = {
+  accessToken: 'access_token',
   connectedToDb: 'Connected to the database',
-  internalServerError: 'Internal server error',
-  true: true,
   false: false,
+  internalServerError: 'Internal server error',
+  success: 'success',
+  true: true,
 };
 
 export default constants;
