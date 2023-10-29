@@ -29,7 +29,7 @@ const OAuth = () => {
       });
 
       dispatch(signInSuccess(response));
-      navigate('/');
+      navigate('/profile');
     } catch (error) {
       console.log('Could not sign in with google', error);
       dispatch(signInFailure(error?.response?.data?.message || error?.message));
