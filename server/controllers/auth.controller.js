@@ -20,7 +20,7 @@ export const signup = async (req, res, next) => {
 
     res.status(StatusCodes.CREATED).json({
       status: constants.success,
-      message: 'User created successfully',
+      message: constants.userSignUp,
     });
   } catch (error) {
     next(error);
@@ -41,18 +41,71 @@ export const signin = async (req, res, next) => {
     if (!validUser) {
       return next(errorHandler(StatusCodes.NOT_FOUND, 'User not found'));
     }
+
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword) {
       return next(errorHandler(StatusCodes.UNAUTHORIZED, 'Wrong credentials'));
     }
-    const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
 
-    const { _id: id, username, email: userEmail } = validUser;
+    const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
+    const { _id: id, username, email: userEmail, avatar } = validUser;
 
     res
       .cookie(constants.accessToken, token, { httpOnly: constants.true })
       .status(StatusCodes.OK)
-      .json({ status: constants.success, id, email: userEmail, username });
+      .json({
+        status: constants.success,
+        message: constants.userSignIn,
+        id,
+        email: userEmail,
+        username,
+        avatar,
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Google Sign in/Sign up method
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+export const google = async (req, res, next) => {
+  const { email, photo } = req.body;
+  try {
+    let user = await User.findOne({ email });
+    if (!user) {
+      const randomNumber = Math.random().toString(36).slice(-8);
+      const generatedPassword = randomNumber + randomNumber;
+      const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
+
+      const newUser = new User({
+        username: email.split('@')[0],
+        email,
+        password: hashedPassword,
+        avatar: photo,
+      });
+
+      user = await newUser.save();
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    const { _id: id, username, email: userEmail, avatar } = user;
+
+    res
+      .cookie(constants.accessToken, token, { httpOnly: constants.true })
+      .status(StatusCodes.OK)
+      .json({
+        status: constants.success,
+        message: constants.userSignIn,
+        id,
+        email: userEmail,
+        username,
+        avatar,
+      });
   } catch (error) {
     next(error);
   }
