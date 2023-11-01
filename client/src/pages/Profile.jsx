@@ -7,6 +7,7 @@ import {
 } from 'firebase/storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import { app } from '../firebase.js';
 import {
   deleteUserFailure,
@@ -163,6 +164,11 @@ const Profile = () => {
           alt={currentUser.data.username}
           className='object-cover w-24 h-24 rounded=full cursor-pointer self-center mt-2'
           onClick={() => fileRef.current.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === 'Space') {
+              fileRef.current.click();
+            }
+          }}
         />
 
         <p className='self-center text-sm'>
@@ -218,16 +224,36 @@ const Profile = () => {
         >
           {loading ? 'Loading...' : 'Update'}
         </button>
+
+        <Link
+          to='/create-listing'
+          className='p-3 text-center text-white uppercase bg-green-700 rounded-lg hover:opacity-95'
+        >
+          Create Listing
+        </Link>
       </form>
 
       <div className='flex justify-between mt-5'>
         <span
           className='text-red-700 cursor-pointer'
           onClick={handleDeleteUser}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === 'Space') {
+              handleDeleteUser();
+            }
+          }}
         >
           Delete account
         </span>
-        <span className='text-red-700 cursor-pointer' onClick={handleSignOut}>
+        <span
+          className='text-red-700 cursor-pointer'
+          onClick={handleSignOut}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === 'Space') {
+              handleSignOut();
+            }
+          }}
+        >
           Sign out
         </span>
       </div>
