@@ -9,6 +9,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { app } from '../firebase.js';
 import {
+  deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
   updateUserFailure,
   updateUserStart,
   updateUserSuccess,
@@ -88,6 +91,27 @@ const Profile = () => {
       setUpdateSuccessMessage(result.data.message);
     } catch (error) {
       dispatch(updateUserFailure(error.message));
+    }
+  };
+
+  const handleDeleteUser = async (event) => {
+    event.preventDefault();
+
+    try {
+      dispatch(deleteUserStart());
+
+      const result = await axios.delete(
+        `/api/user/delete/${currentUser.data.id}`
+      );
+
+      if (!result.status) {
+        dispatch(deleteUserFailure(result.message));
+        return;
+      }
+
+      dispatch(deleteUserSuccess(result));
+    } catch (error) {
+      dispatch(deleteUserFailure(error.message));
     }
   };
 
@@ -176,7 +200,12 @@ const Profile = () => {
       </form>
 
       <div className='flex justify-between mt-5'>
-        <span className='text-red-700 cursor-pointer'>Delete account</span>
+        <span
+          className='text-red-700 cursor-pointer'
+          onClick={handleDeleteUser}
+        >
+          Delete account
+        </span>
         <span className='text-red-700 cursor-pointer'>Sign out</span>
       </div>
 

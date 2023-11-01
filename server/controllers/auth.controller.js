@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 import constants from '../utils/constants.js';
 import { errorHandler } from '../utils/error.js';
+import { generateUserResponse } from './user.controller.js';
 
 /**
  * Sign up method
@@ -48,19 +49,12 @@ export const signin = async (req, res, next) => {
     }
 
     const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
-    const { _id: id, username, email: userEmail, avatar } = validUser;
+    const response = generateUserResponse(validUser, constants.userSignIn);
 
     res
       .cookie(constants.accessToken, token, { httpOnly: constants.true })
       .status(StatusCodes.OK)
-      .json({
-        status: constants.success,
-        message: constants.userSignIn,
-        id,
-        email: userEmail,
-        username,
-        avatar,
-      });
+      .json(response);
   } catch (error) {
     next(error);
   }
@@ -93,19 +87,12 @@ export const google = async (req, res, next) => {
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-    const { _id: id, username, email: userEmail, avatar } = user;
+    const response = generateUserResponse(user, constants.userSignIn);
 
     res
       .cookie(constants.accessToken, token, { httpOnly: constants.true })
       .status(StatusCodes.OK)
-      .json({
-        status: constants.success,
-        message: constants.userSignIn,
-        id,
-        email: userEmail,
-        username,
-        avatar,
-      });
+      .json(response);
   } catch (error) {
     next(error);
   }

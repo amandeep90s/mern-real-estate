@@ -41,15 +41,58 @@ export const updateUser = async (req, res, next) => {
       { new: true }
     );
 
-    const { _id: userId, username, email, avatar } = updatedUser;
+    const response = generateUserResponse(updatedUser, constants.userUpdated);
 
+    res.status(StatusCodes.OK).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Generate response for user object
+ * @param {*} user
+ * @param {*} message
+ * @returns
+ */
+export const generateUserResponse = (user, message) => {
+  const { _id: id, username, email, avatar } = user;
+
+  return {
+    status: constants.success,
+    message,
+    id,
+    email,
+    username,
+    avatar,
+  };
+};
+
+/**
+ * Delete user from app
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export const deleteUser = async (req, res, next) => {
+  const { id } = req.params;
+
+  if (id !== req.user.id) {
+    return next(
+      errorHandler(
+        StatusCodes.UNAUTHORIZED,
+        'You can only update your own account!'
+      )
+    );
+  }
+
+  try {
+    await User.findByIdAndDelete(id);
+
+    res.clearCookie('access_token');
     res.status(StatusCodes.OK).json({
-      status: constants.success,
-      message: constants.userUpdated,
-      id: userId,
-      email,
-      username,
-      avatar,
+      status: constants.true,
+      message: constants.userDeleted,
     });
   } catch (error) {
     next(error);
