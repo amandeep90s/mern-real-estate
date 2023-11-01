@@ -10,6 +10,11 @@ const constants = {
   userSignIn: 'User signed-in successfully',
   userUpdated: 'User updated successfully',
   userDeleted: 'User has been deleted',
+  createListing: 'Listing created successfully',
+  getListings: 'All listings',
+  getListing: 'Listing details',
+  updateListing: 'Listing updated successfully',
+  deleteListing: 'Listing deleted successfully',
 };
 
 export default constants;
