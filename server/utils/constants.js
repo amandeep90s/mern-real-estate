@@ -7,6 +7,7 @@ const constants = {
   true: true,
   userSignUp: 'User signed-up successfully',
   userSignIn: 'User signed-in successfully',
+  userUpdated: 'User updated successfully',
 };
 
 export default constants;
