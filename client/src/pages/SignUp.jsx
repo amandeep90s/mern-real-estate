@@ -1,13 +1,12 @@
 import axios from 'axios';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import constants from '../../../server/utils/constants';
 import OAuth from '../components/OAuth';
 
 const SignUp = () => {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(constants.false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (event) => {
@@ -18,22 +17,22 @@ const SignUp = () => {
     event.preventDefault();
     try {
       setError(null);
-      setLoading(constants.true);
+      setLoading(true);
       const result = await axios.post('/api/auth/signup', formData, {
         'Content-Type': 'application/json',
       });
 
-      if (result.status == constants.false) {
-        setLoading(constants.false);
+      if (!result.status) {
+        setLoading(false);
         setError(result.message);
         return;
       }
-      setLoading(constants.false);
+      setLoading(false);
       setFormData({});
       navigate('/sign-in');
     } catch (error) {
       setError(error?.response?.data?.message);
-      setLoading(constants.false);
+      setLoading(false);
     }
   };
 

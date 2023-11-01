@@ -2,7 +2,6 @@ import axios from 'axios';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import constants from '../../../server/utils/constants';
 import OAuth from '../components/OAuth';
 import {
   signInFailure,
@@ -29,7 +28,7 @@ const SignIn = () => {
         'Content-Type': 'application/json',
       });
 
-      if (result.status == constants.false) {
+      if (!result.status) {
         dispatch(signInFailure(result.message));
         return;
       }
@@ -74,7 +73,7 @@ const SignIn = () => {
           disabled={loading}
           className='p-3 text-white uppercase rounded-lg bg-slate-700 hover:opacity-95 disabled:opacity-80'
         >
-          {loading ? 'Loading' : 'Sign In'}
+          {loading ? 'Loading...' : 'Sign In'}
         </button>
         <OAuth />
       </form>

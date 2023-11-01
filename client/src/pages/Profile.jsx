@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
   getDownloadURL,
   getStorage,
@@ -5,16 +6,23 @@ import {
   uploadBytesResumable,
 } from 'firebase/storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { app } from '../firebase.js';
+import {
+  updateUserFailure,
+  updateUserStart,
+  updateUserSuccess,
+} from '../redux/user/userSlice.js';
 
 const Profile = () => {
-  const { currentUser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const { currentUser, error, loading } = useSelector((state) => state.user);
   const fileRef = useRef(null);
   const [file, setFile] = useState(undefined);
   const [filePercentage, setFilePercentage] = useState(0);
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
+  const [updateSuccessMessage, setUpdateSuccessMessage] = useState(null);
 
   const handleFileUpload = useCallback(
     (file) => {
@@ -53,6 +61,36 @@ const Profile = () => {
     }
   }, [file, handleFileUpload]);
 
+  const handleChange = (event) => {
+    setFormData({ ...formData, [event.target.id]: event.target.value });
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      dispatch(updateUserStart());
+
+      const result = await axios.post(
+        `/api/user/update/${currentUser.data.id}`,
+        formData,
+        {
+          'Content-Type': 'application/json',
+        }
+      );
+
+      if (!result.status) {
+        dispatch(updateUserFailure(result.message));
+        return;
+      }
+
+      dispatch(updateUserSuccess(result));
+      setUpdateSuccessMessage(result.data.message);
+    } catch (error) {
+      dispatch(updateUserFailure(error.message));
+    }
+  };
+
   /**
    *  Firebase store rules
    *  allow read;
@@ -64,7 +102,7 @@ const Profile = () => {
     <div className='max-w-lg p-3 mx-auto'>
       <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
 
-      <form className='flex flex-col gap-4'>
+      <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <input
           type='file'
           name='avatar'
@@ -76,7 +114,7 @@ const Profile = () => {
         />
 
         <img
-          src={formData.avatar || currentUser.data.avatar}
+          src={formData?.avatar || currentUser.data.avatar}
           alt={currentUser.data.username}
           className='object-cover w-24 h-24 rounded=full cursor-pointer self-center mt-2'
           onClick={() => fileRef.current.click()}
@@ -103,6 +141,8 @@ const Profile = () => {
           placeholder='Username'
           autoComplete='username'
           className='p-3 border rounded-lg'
+          defaultValue={currentUser.data.username}
+          onChange={handleChange}
         />
 
         <input
@@ -112,6 +152,8 @@ const Profile = () => {
           placeholder='Email'
           autoComplete='email'
           className='p-3 border rounded-lg'
+          defaultValue={currentUser.data.email}
+          onChange={handleChange}
         />
 
         <input
@@ -121,13 +163,15 @@ const Profile = () => {
           placeholder='Password'
           autoComplete='new-password'
           className='p-3 border rounded-lg'
+          onChange={handleChange}
         />
 
         <button
+          disabled={loading}
           type='submit'
           className='p-3 text-white uppercase rounded-lg bg-slate-700 hover:opacity-95 disabled:opacity-80'
         >
-          Update
+          {loading ? 'Loading...' : 'Update'}
         </button>
       </form>
 
@@ -135,6 +179,14 @@ const Profile = () => {
         <span className='text-red-700 cursor-pointer'>Delete account</span>
         <span className='text-red-700 cursor-pointer'>Sign out</span>
       </div>
+
+      {error && <p className='mt-5 text-center text-red-700'>{error}</p>}
+
+      {updateSuccessMessage && (
+        <p className='mt-5 text-center text-green-700'>
+          {updateSuccessMessage}
+        </p>
+      )}
     </div>
   );
 };
