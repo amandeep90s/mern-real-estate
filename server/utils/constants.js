@@ -3,6 +3,7 @@ const constants = {
   connectedToDb: 'Connected to the database',
   false: false,
   internalServerError: 'Internal server error',
+  signout: 'User has been logged out',
   success: 'success',
   true: true,
   userSignUp: 'User signed-up successfully',

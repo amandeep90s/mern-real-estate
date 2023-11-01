@@ -12,6 +12,9 @@ import {
   deleteUserFailure,
   deleteUserStart,
   deleteUserSuccess,
+  signOutUserFailure,
+  signOutUserStart,
+  signOutUserSuccess,
   updateUserFailure,
   updateUserStart,
   updateUserSuccess,
@@ -115,6 +118,24 @@ const Profile = () => {
     }
   };
 
+  const handleSignOut = async (event) => {
+    event.preventDefault();
+
+    try {
+      dispatch(signOutUserStart());
+      const result = await axios.get('/api/auth/signout');
+
+      if (!result.status) {
+        dispatch(signOutUserFailure(result.message));
+        return;
+      }
+
+      dispatch(signOutUserSuccess(result));
+    } catch (error) {
+      dispatch(signOutUserFailure(error.message));
+    }
+  };
+
   /**
    *  Firebase store rules
    *  allow read;
@@ -206,7 +227,9 @@ const Profile = () => {
         >
           Delete account
         </span>
-        <span className='text-red-700 cursor-pointer'>Sign out</span>
+        <span className='text-red-700 cursor-pointer' onClick={handleSignOut}>
+          Sign out
+        </span>
       </div>
 
       {error && <p className='mt-5 text-center text-red-700'>{error}</p>}
