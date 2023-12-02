@@ -1,6 +1,15 @@
+import {
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
+} from 'firebase/storage';
 import { useState } from 'react';
+import { app } from '../firebase.js';
 
 const CreateListing = () => {
+  const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     imageUrls: [],
     name: '',
@@ -15,6 +24,70 @@ const CreateListing = () => {
     parking: false,
     furnished: false,
   });
+  const [imageUploadError, setImageUploadError] = useState(null);
+
+  const handleImageSubmit = () => {
+    if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
+      setUploading(true);
+      setImageUploadError(null);
+      const promises = [];
+
+      for (const file of files) {
+        promises.push(storeImage(file));
+      }
+
+      Promise.all(promises)
+        .then((urls) => {
+          setFormData({
+            ...formData,
+            imageUrls: formData.imageUrls.concat(urls),
+          });
+          setImageUploadError(null);
+          setUploading(false);
+        })
+        .catch((error) => {
+          console.error(error);
+          setUploading(false);
+          setImageUploadError('Image upload failed (2MB max per image)');
+        });
+    } else {
+      setUploading(false);
+      setImageUploadError('You can only upload 6 images per listing');
+    }
+  };
+
+  const storeImage = async (file) => {
+    return new Promise((resolve, reject) => {
+      const storage = getStorage(app);
+      const filename = `${new Date().getTime()}${file.name}`;
+      const storageRef = ref(storage, filename);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      uploadTask.on(
+        'state_changes',
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`Upload is ${progress} completed`);
+        },
+        (error) => {
+          reject(error);
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            resolve(downloadURL);
+          });
+        }
+      );
+    });
+  };
+
+  const handleRemoveImage = (index) => {
+    setFormData({
+      ...formData,
+      imageUrls: formData.imageUrls.filter((_, i) => i !== index),
+    });
+  };
+
   const handleChange = (event) => {
     setFormData({ ...formData, [event.target.id]: event.target.value });
   };
@@ -69,12 +142,26 @@ const CreateListing = () => {
 
           <div className='flex flex-wrap gap-6'>
             <div className='flex gap-2'>
-              <input type='checkbox' name='sale' id='sale' className='w-5' />
+              <input
+                type='checkbox'
+                name='sale'
+                id='sale'
+                className='w-5'
+                onChange={handleChange}
+                checked={formData.type === 'sale'}
+              />
               <span>Sell</span>
             </div>
 
             <div className='flex gap-2'>
-              <input type='checkbox' name='rent' id='rent' className='w-5' />
+              <input
+                type='checkbox'
+                name='rent'
+                id='rent'
+                className='w-5'
+                onChange={handleChange}
+                checked={formData.type === 'rent'}
+              />
               <span>Rent</span>
             </div>
 
@@ -84,6 +171,8 @@ const CreateListing = () => {
                 name='parking'
                 id='parking'
                 className='w-5'
+                onChange={handleChange}
+                checked={formData.parking}
               />
               <span>Parking Spot</span>
             </div>
@@ -94,12 +183,21 @@ const CreateListing = () => {
                 name='furnished'
                 id='furnished'
                 className='w-5'
+                onChange={handleChange}
+                checked={formData.furnished}
               />
               <span>Furnished</span>
             </div>
 
             <div className='flex gap-2'>
-              <input type='checkbox' name='offer' id='offer' className='w-5' />
+              <input
+                type='checkbox'
+                name='offer'
+                id='offer'
+                className='w-5'
+                onChange={handleChange}
+                checked={formData.offer}
+              />
               <span>Offer</span>
             </div>
           </div>
@@ -114,6 +212,7 @@ const CreateListing = () => {
                 min={1}
                 max={10}
                 onChange={handleChange}
+                value={formData.bedrooms}
                 autoComplete='bedrooms'
                 required
               />
@@ -129,6 +228,7 @@ const CreateListing = () => {
                 min={1}
                 max={10}
                 onChange={handleChange}
+                value={formData.bathrooms}
                 autoComplete='bathrooms'
                 required
               />
@@ -141,9 +241,10 @@ const CreateListing = () => {
                 name='regularPrice'
                 id='regularPrice'
                 className='p-3 border border-gray-300 rounded-lg outline-none'
-                min={1}
-                max={10}
+                min={50}
+                max={1000000}
                 onChange={handleChange}
+                value={formData.regularPrice}
                 autoComplete='regularPrice'
                 required
               />
@@ -162,6 +263,7 @@ const CreateListing = () => {
                 min={1}
                 max={10}
                 onChange={handleChange}
+                value={formData.discountPrice}
                 autoComplete='discountPrice'
                 required
               />
@@ -185,17 +287,43 @@ const CreateListing = () => {
               name='images'
               id='images'
               className='w-full p-3 border border-gray-300 rounded outline-none'
+              onChange={(e) => setFiles(e.target.files)}
               accept='image/*'
               multiple
             />
 
             <button
               type='button'
-              className='p-3 text-green-700 uppercase border border-green-700 rounded hover:shadow-lg disabled:opacity-80'
+              className='p-3 text-green-700 uppercase border border-green-700 rounded hover:shadow-lg disabled:opacity-80 disabled:cursor-not-allowed disabled:border-gray-500 disabled:text-gray-500'
+              onClick={handleImageSubmit}
+              disabled={uploading || files.length === 0}
             >
-              Upload
+              {uploading ? 'Uploading...' : 'Upload'}
             </button>
           </div>
+          {imageUploadError && (
+            <p className='text-xs text-red-700'>{imageUploadError}</p>
+          )}
+
+          {formData.imageUrls.map((url, index) => (
+            <div
+              key={url}
+              className='flex items-center justify-between p-3 border'
+            >
+              <img
+                src={url}
+                alt='Listing Image'
+                className='object-contain w-20 h-20 rounded-lg'
+              />
+              <button
+                type='button'
+                className='p-3 text-red-700 uppercase hover:opacity-75'
+                onClick={() => handleRemoveImage(index)}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
           <button
             type='submit'
             className='p-3 text-white rounded-lg bg-slate-700 hover:opacity-95 disabled:opacity-80'
