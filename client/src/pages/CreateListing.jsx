@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
   getDownloadURL,
   getStorage,
@@ -5,11 +6,21 @@ import {
   uploadBytesResumable,
 } from 'firebase/storage';
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { app } from '../firebase.js';
 
+const FALSE = false;
+const TRUE = true;
+
 const CreateListing = () => {
+  const { currentUser } = useSelector((state) => state.user);
+  const navigate = useNavigate();
   const [files, setFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(FALSE);
+  const [imageUploadError, setImageUploadError] = useState(null);
+  const [error, setError] = useState(FALSE);
+  const [loading, setLoading] = useState(FALSE);
   const [formData, setFormData] = useState({
     imageUrls: [],
     name: '',
@@ -20,15 +31,14 @@ const CreateListing = () => {
     bathrooms: 1,
     regularPrice: 50,
     discountPrice: 0,
-    offer: false,
-    parking: false,
-    furnished: false,
+    offer: FALSE,
+    parking: FALSE,
+    furnished: FALSE,
   });
-  const [imageUploadError, setImageUploadError] = useState(null);
 
   const handleImageSubmit = () => {
     if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
-      setUploading(true);
+      setUploading(TRUE);
       setImageUploadError(null);
       const promises = [];
 
@@ -43,15 +53,15 @@ const CreateListing = () => {
             imageUrls: formData.imageUrls.concat(urls),
           });
           setImageUploadError(null);
-          setUploading(false);
+          setUploading(FALSE);
         })
         .catch((error) => {
           console.error(error);
-          setUploading(false);
+          setUploading(FALSE);
           setImageUploadError('Image upload failed (2MB max per image)');
         });
     } else {
-      setUploading(false);
+      setUploading(FALSE);
       setImageUploadError('You can only upload 6 images per listing');
     }
   };
@@ -89,11 +99,54 @@ const CreateListing = () => {
   };
 
   const handleChange = (event) => {
-    setFormData({ ...formData, [event.target.id]: event.target.value });
+    if (event.target.id === 'rent' || event.target.id === 'sale') {
+      setFormData({ ...formData, type: event.target.id });
+    }
+    if (
+      event.target.id === 'parking' ||
+      event.target.id === 'furnished' ||
+      event.target.id === 'offer'
+    ) {
+      setFormData({ ...formData, [event.target.id]: event.target.checked });
+    }
+    if (
+      event.target.type === 'number' ||
+      event.target.type === 'text' ||
+      event.target.type === 'textarea'
+    ) {
+      setFormData({ ...formData, [event.target.id]: event.target.value });
+    }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    try {
+      if (formData.imageUrls.length === 0) {
+        return setError('You must upload atleast one image');
+      }
+      if (Number(formData.regularPrice) < Number(formData.discountPrice)) {
+        return setError('Discount price must be lower than regular price');
+      }
+      setLoading(TRUE);
+      const response = await axios.post(
+        '/api/listing',
+        { ...formData, userRef: currentUser.data.id },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      setLoading(FALSE);
+      if (!response.data.status) {
+        setError(response.message);
+      } else {
+        navigate(`/listing/${response.data.listing._id}`);
+      }
+    } catch (error) {
+      setError(error.message);
+      setLoading(FALSE);
+    }
   };
 
   return (
@@ -120,7 +173,6 @@ const CreateListing = () => {
             required
           />
           <textarea
-            type='text'
             placeholder='Description'
             className='p-3 border border-gray-300 rounded-lg outline-none'
             id='description'
@@ -214,7 +266,6 @@ const CreateListing = () => {
                 onChange={handleChange}
                 value={formData.bedrooms}
                 autoComplete='bedrooms'
-                required
               />
               <span>Beds</span>
             </div>
@@ -230,7 +281,6 @@ const CreateListing = () => {
                 onChange={handleChange}
                 value={formData.bathrooms}
                 autoComplete='bathrooms'
-                required
               />
               <span>Baths</span>
             </div>
@@ -254,24 +304,25 @@ const CreateListing = () => {
               </div>
             </div>
 
-            <div className='flex items-center gap-2'>
-              <input
-                type='number'
-                name='discountPrice'
-                id='discountPrice'
-                className='p-3 border border-gray-300 rounded-lg outline-none'
-                min={1}
-                max={10}
-                onChange={handleChange}
-                value={formData.discountPrice}
-                autoComplete='discountPrice'
-                required
-              />
-              <div className='flex flex-col items-center'>
-                <p>Discounted Price</p>
-                <span className='text-xs'>($ / Month)</span>
+            {formData.offer && (
+              <div className='flex items-center gap-2'>
+                <input
+                  type='number'
+                  name='discountPrice'
+                  id='discountPrice'
+                  className='p-3 border border-gray-300 rounded-lg outline-none'
+                  min={0}
+                  max={10000000}
+                  onChange={handleChange}
+                  value={formData.discountPrice}
+                  autoComplete='discountPrice'
+                />
+                <div className='flex flex-col items-center'>
+                  <p>Discounted Price</p>
+                  <span className='text-xs'>($ / Month)</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -326,10 +377,12 @@ const CreateListing = () => {
           ))}
           <button
             type='submit'
-            className='p-3 text-white rounded-lg bg-slate-700 hover:opacity-95 disabled:opacity-80'
+            className='p-3 text-white rounded-lg bg-slate-700 hover:opacity-95 disabled:opacity-80 disabled:cursor-not-allowed'
+            disabled={loading || uploading}
           >
-            Create Listing
+            {loading ? 'Saving...' : 'Create Listing'}
           </button>
+          {error && <p className='text-xs text-center text-red-700'>{error}</p>}
         </div>
       </form>
     </main>
