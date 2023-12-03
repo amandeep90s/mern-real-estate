@@ -30,6 +30,9 @@ const Profile = () => {
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccessMessage, setUpdateSuccessMessage] = useState(null);
+  const [showListingsError, setShowListingsError] = useState(false);
+  const [listings, setListings] = useState([]);
+  console.log(listings);
 
   const handleFileUpload = useCallback(
     (file) => {
@@ -134,6 +137,23 @@ const Profile = () => {
       dispatch(signOutUserSuccess(result));
     } catch (error) {
       dispatch(signOutUserFailure(error.message));
+    }
+  };
+
+  const handleShowListings = async () => {
+    try {
+      setShowListingsError(false);
+      const response = await axios.get(
+        `/api/user/listings/${currentUser.data.id}`
+      );
+
+      if (!response.data.status) {
+        return setShowListingsError(true);
+      }
+
+      setListings(response.data.listings);
+    } catch (error) {
+      setShowListingsError(true);
     }
   };
 
@@ -264,6 +284,55 @@ const Profile = () => {
         <p className='mt-5 text-center text-green-700'>
           {updateSuccessMessage}
         </p>
+      )}
+
+      <button
+        className='w-full mt-5 text-green-700'
+        onClick={handleShowListings}
+      >
+        Show Listings
+      </button>
+
+      {showListingsError && (
+        <p className='mt-5 text-red-700'>Error Showing Listings</p>
+      )}
+
+      {listings.length > 0 && (
+        <div className='flex flex-col gap-4'>
+          <h1 className='text-2xl font-semibold text-center mt-7'>
+            Your Listings
+          </h1>
+          {listings.map((listing) => (
+            <div
+              key={listing._id}
+              className='flex items-center justify-between gap-4 p-3 border rounded-lg'
+            >
+              <Link to={`/listing/${listing._id}`}>
+                <img
+                  src={listing.imageUrls[0]}
+                  alt='Listing cover'
+                  className='object-contain w-16 h-16 rounded-lg'
+                />
+              </Link>
+
+              <Link
+                to={`/listing/${listing._id}`}
+                className='flex-1 font-semibold truncate text-slate-700 hover:underline'
+              >
+                <p>{listing.name}</p>
+              </Link>
+
+              <div className='flex flex-col'>
+                <button type='button' className='text-red-700'>
+                  Delete
+                </button>
+                <button type='button' className='text-green-700'>
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

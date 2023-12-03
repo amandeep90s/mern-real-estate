@@ -120,7 +120,10 @@ export const getUserListings = async (req, res, next) => {
   try {
     const listings = await Listing.find({ userRef: req.params.id });
 
-    res.status(StatusCodes.OK).json(listings);
+    res.status(StatusCodes.OK).json({
+      status: constants.true,
+      listings,
+    });
   } catch (error) {
     next(error);
   }
