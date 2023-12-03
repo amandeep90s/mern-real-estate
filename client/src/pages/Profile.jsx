@@ -30,7 +30,8 @@ const Profile = () => {
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccessMessage, setUpdateSuccessMessage] = useState(null);
-  const [showListingsError, setShowListingsError] = useState(false);
+  const [showListingsError, setShowListingsError] = useState(null);
+  const [deleteListingsError, setDeleteListingsError] = useState(null);
   const [listings, setListings] = useState([]);
   console.log(listings);
 
@@ -142,18 +143,37 @@ const Profile = () => {
 
   const handleShowListings = async () => {
     try {
-      setShowListingsError(false);
+      setShowListingsError(null);
       const response = await axios.get(
         `/api/user/listings/${currentUser.data.id}`
       );
 
       if (!response.data.status) {
-        return setShowListingsError(true);
+        return setShowListingsError('Error while showing listings');
       }
 
       setListings(response.data.listings);
     } catch (error) {
-      setShowListingsError(true);
+      setShowListingsError(error.message);
+    }
+  };
+
+  const handleListingDelete = async (listingId) => {
+    try {
+      setDeleteListingsError(null);
+      const response = await axios.delete(`/api/listing/${listingId}`);
+
+      if (!response.data.status) {
+        return setDeleteListingsError(response.data.message);
+      }
+
+      setListings((prevState) =>
+        prevState.filter(
+          (listing) => listing._id.toString() !== listingId.toString()
+        )
+      );
+    } catch (error) {
+      setDeleteListingsError(error.message);
     }
   };
 
@@ -294,7 +314,11 @@ const Profile = () => {
       </button>
 
       {showListingsError && (
-        <p className='mt-5 text-red-700'>Error Showing Listings</p>
+        <p className='mt-5 text-red-700'>{showListingsError}</p>
+      )}
+
+      {deleteListingsError && (
+        <p className='mt-5 text-red-700'>{deleteListingsError}</p>
       )}
 
       {listings.length > 0 && (
@@ -323,7 +347,11 @@ const Profile = () => {
               </Link>
 
               <div className='flex flex-col'>
-                <button type='button' className='text-red-700'>
+                <button
+                  type='button'
+                  className='text-red-700'
+                  onClick={() => handleListingDelete(listing._id)}
+                >
                   Delete
                 </button>
                 <button type='button' className='text-green-700'>
