@@ -1,5 +1,6 @@
 import bcryptjs from 'bcryptjs';
 import { StatusCodes } from 'http-status-codes';
+import Listing from '../models/listing.model.js';
 import User from '../models/user.model.js';
 import constants from '../utils/constants.js';
 import { errorHandler } from '../utils/error.js';
@@ -94,6 +95,32 @@ export const deleteUser = async (req, res, next) => {
       status: constants.true,
       message: constants.userDeleted,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get user listings
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export const getUserListings = async (req, res, next) => {
+  // Check if user is trying to view his own listings. If not, throw error.
+  if (req.user.id !== req.params.id) {
+    return next(
+      errorHandler(
+        StatusCodes.UNAUTHORIZED,
+        'You can only view your own listings'
+      )
+    );
+  }
+
+  try {
+    const listings = await Listing.find({ userRef: req.params.id });
+
+    res.status(StatusCodes.OK).json(listings);
   } catch (error) {
     next(error);
   }
