@@ -44,6 +44,27 @@ export const createListing = async (req, res, next) => {
  */
 export const getListing = async (req, res, next) => {
   try {
+    const listing = await Listing.findById(req.params.id);
+    console.log(listing);
+
+    if (!listing) {
+      return next(errorHandler(StatusCodes.NOT_FOUND, 'Listing not found'));
+    }
+
+    if (req.user.id !== listing.userRef.toString()) {
+      return next(
+        errorHandler(
+          StatusCodes.UNAUTHORIZED,
+          'You can only update your own listings!'
+        )
+      );
+    }
+
+    res.status(StatusCodes.OK).json({
+      status: constants.success,
+      message: constants.getListing,
+      listing,
+    });
   } catch (error) {
     next(error);
   }
@@ -57,6 +78,32 @@ export const getListing = async (req, res, next) => {
  */
 export const updateListing = async (req, res, next) => {
   try {
+    const listing = await Listing.findById(req.params.id);
+
+    if (!listing) {
+      return next(errorHandler(StatusCodes.NOT_FOUND, 'Listing not found'));
+    }
+
+    if (req.user.id !== listing.userRef.toString()) {
+      return next(
+        errorHandler(
+          StatusCodes.UNAUTHORIZED,
+          'You can only update your own listings!'
+        )
+      );
+    }
+
+    const updateListing = await Listing.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.status(StatusCodes.OK).json({
+      status: constants.success,
+      message: constants.updateListing,
+      listing: updateListing,
+    });
   } catch (error) {
     next(error);
   }
