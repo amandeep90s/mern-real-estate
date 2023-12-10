@@ -120,10 +120,18 @@ export const getUserListings = async (req, res, next) => {
   try {
     const listings = await Listing.find({ userRef: req.params.id });
 
-    res.status(StatusCodes.OK).json({
-      status: constants.true,
-      listings,
-    });
+    if (listings.length === 0) {
+      res.status(StatusCodes.OK).json({
+        status: constants.true,
+        message: 'No listings found for this user',
+        listings: [],
+      });
+    } else {
+      res.status(StatusCodes.OK).json({
+        status: constants.true,
+        listings,
+      });
+    }
   } catch (error) {
     next(error);
   }

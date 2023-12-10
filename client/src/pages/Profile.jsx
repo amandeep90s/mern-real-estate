@@ -33,7 +33,7 @@ const Profile = () => {
   const [showListingsError, setShowListingsError] = useState(null);
   const [deleteListingsError, setDeleteListingsError] = useState(null);
   const [listings, setListings] = useState([]);
-  console.log(listings);
+  const [noListingsError, setNoListingsError] = useState(null);
 
   const handleFileUpload = useCallback(
     (file) => {
@@ -143,6 +143,7 @@ const Profile = () => {
 
   const handleShowListings = async () => {
     try {
+      setNoListingsError(null);
       setShowListingsError(null);
       const response = await axios.get(
         `/api/user/listings/${currentUser.data.id}`
@@ -150,6 +151,10 @@ const Profile = () => {
 
       if (!response.data.status) {
         return setShowListingsError('Error while showing listings');
+      }
+
+      if (response.data.listings.length === 0) {
+        setNoListingsError(response.data.message);
       }
 
       setListings(response.data.listings);
@@ -314,11 +319,15 @@ const Profile = () => {
       </button>
 
       {showListingsError && (
-        <p className='mt-5 text-red-700'>{showListingsError}</p>
+        <p className='mt-5 text-center text-red-700'>{showListingsError}</p>
       )}
 
       {deleteListingsError && (
-        <p className='mt-5 text-red-700'>{deleteListingsError}</p>
+        <p className='mt-5 text-center text-red-700'>{deleteListingsError}</p>
+      )}
+
+      {noListingsError && (
+        <p className='mt-5 text-center text-red-700'>{noListingsError}</p>
       )}
 
       {listings.length > 0 && (
@@ -354,9 +363,11 @@ const Profile = () => {
                 >
                   Delete
                 </button>
-                <button type='button' className='text-green-700'>
-                  Edit
-                </button>
+                <Link to={`/update-listing/${listing._id}`}>
+                  <button type='button' className='text-green-700'>
+                    Edit
+                  </button>
+                </Link>
               </div>
             </div>
           ))}
