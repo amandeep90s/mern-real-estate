@@ -142,7 +142,7 @@ const UpdateListing = () => {
     event.preventDefault();
     try {
       if (formData.imageUrls.length === 0) {
-        return setError('You must upload atleast one image');
+        return setError('You must upload minimum one image');
       }
       if (Number(formData.regularPrice) < Number(formData.discountPrice)) {
         return setError('Discount price must be lower than regular price');
