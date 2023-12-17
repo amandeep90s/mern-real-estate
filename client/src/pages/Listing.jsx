@@ -14,7 +14,7 @@ import SwiperCore from 'swiper';
 import 'swiper/css/bundle';
 import { Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import Contact from './Contact';
+import Contact from '../components/Contact';
 
 const Listing = () => {
   const [listing, setListing] = useState(null);
