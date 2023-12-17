@@ -136,3 +136,28 @@ export const getUserListings = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Get user details
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export const getUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return next(errorHandler(StatusCodes.BAD_REQUEST, 'User not found!'));
+    }
+
+    const { password, ...rest } = user._doc;
+
+    res.status(StatusCodes.OK).json({
+      status: constants.true,
+      user: rest,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
